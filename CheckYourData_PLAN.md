@@ -32,7 +32,7 @@ The AI agent and the manual preset checks both compile down to the **same underl
 ### Phase 1 — Core Engine (no UI, no agent)
 Goal: a working, testable Python package that runs checks against a dataset and stores results.
 
-- [ ] Define the check-config schema (JSON), e.g.:
+- [x] Define the check-config schema (JSON), e.g.:
   ```json
   {
     "column": "age",
@@ -75,11 +75,11 @@ Goal: a working, testable Python package that runs checks against a dataset and 
   - `conditional_check` (if col A = X, col B must satisfy Y)
 
   Not every check type needs to be built in the first pass through Phase 1 — get the check-runner architecture working with ~5-6 checks across categories first (one from each category), confirm the pattern is easy to extend, then fill in the rest. Trying to build all ~20 before testing the runner is a good way to stall.
-- [ ] Build the check-runner: takes a dataset (pandas DataFrame) + list of check configs → returns pass/fail + details per check.
-- [ ] Define the results data model and store results in Postgres (see Section 4).
-- [ ] Implement baseline/drift comparison: each run compares numeric/categorical stats against the last N runs.
-- [ ] Test against 2–3 real messy Kaggle datasets, run multiple times (simulate drift by editing a copy of the dataset between runs) to confirm drift detection actually fires.
-- [ ] Write unit tests for each check type.
+- [x] Build the check-runner: takes a dataset (pandas DataFrame) + list of check configs → returns pass/fail + details per check.
+- [x] Define the results data model and store results in Postgres (see Section 4).
+- [x] Implement baseline/drift comparison: each run compares numeric/categorical stats against the last N runs.
+- [x] Test against 2–3 messy datasets, run multiple times (simulate drift by editing a copy of the dataset between runs) to confirm drift detection actually fires. (Used synthetic generated fixtures instead of Kaggle downloads — see `tests/fixtures/generate_messy_data.py`.)
+- [x] Write unit tests for each check type.
 
 **Exit criteria:** you can run a Python script that loads a CSV, runs a list of checks, and see correct pass/fail + drift output printed or logged.
 
