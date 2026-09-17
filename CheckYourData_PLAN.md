@@ -88,13 +88,13 @@ Goal: a working, testable Python package that runs checks against a dataset and 
 ### Phase 2 — API Layer
 Goal: expose the engine as a proper service.
 
-- [ ] `POST /datasets/upload` — upload CSV, store metadata + sample rows
-- [ ] `GET /datasets/{id}/schema` — return inferred schema (column names, types, sample values)
-- [ ] `POST /datasets/{id}/suggest-checks` — calls the AI agent (Phase 3) with schema + sample, returns suggested check configs
-- [ ] `POST /datasets/{id}/checks` — save approved/edited check configs for this dataset
-- [ ] `POST /datasets/{id}/run-checks` — run saved checks against current data, store results
-- [ ] `GET /datasets/{id}/history` — return past run results for dashboard/trend charts
-- [ ] `GET /datasets/{id}/checks` — list current active checks for a dataset
+- [x] `POST /datasets/upload` — upload CSV, store metadata + sample rows
+- [x] `GET /datasets/{id}/schema` — return inferred schema (column names, types, sample values)
+- [x] `POST /datasets/{id}/suggest-checks` — route stubbed (501, "implemented in Phase 3"); actual Claude agent wiring happens in Phase 3
+- [x] `POST /datasets/{id}/checks` — save approved/edited check configs for this dataset
+- [x] `POST /datasets/{id}/run-checks` — run saved checks against current data, store results
+- [x] `GET /datasets/{id}/history` — return past run results for dashboard/trend charts
+- [x] `GET /datasets/{id}/checks` — list current active checks for a dataset
 
 **Exit criteria:** all endpoints testable via curl/Postman, backed by Postgres, no frontend needed yet.
 

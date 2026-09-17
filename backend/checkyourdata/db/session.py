@@ -1,4 +1,5 @@
 import os
+from collections.abc import Iterator
 
 from dotenv import load_dotenv
 from sqlalchemy import Engine, create_engine
@@ -29,3 +30,11 @@ def get_session() -> Session:
 
 def init_db() -> None:
     Base.metadata.create_all(get_engine())
+
+
+def get_db() -> Iterator[Session]:
+    session = get_session()
+    try:
+        yield session
+    finally:
+        session.close()
