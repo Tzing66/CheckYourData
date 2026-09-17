@@ -16,20 +16,13 @@ dependencies = [
     "python-dotenv>=1.0",
 ]
 
-[project.scripts]
-checkyourdata = "checkyourdata:main"
-
 [dependency-groups]
 dev = [
     "pytest>=8.0",
 ]
 
-[build-system]
-requires = ["uv_build>=0.12.15,<0.13.0"]
-build-backend = "uv_build"
-
-[tool.uv.build-backend]
-module-root = "backend"
+[tool.uv]
+package = false
 
 [tool.pytest.ini_options]
 pythonpath = ["backend"]
