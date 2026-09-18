@@ -50,6 +50,14 @@ def upload_dataset(file: UploadFile, name: str | None = None, session: Session =
     )
 
 
+@router.get("/{dataset_id}", response_model=DatasetSummary)
+def get_dataset(dataset_id: int, session: Session = Depends(get_db)) -> DatasetSummary:
+    dataset = _get_dataset_or_404(session, dataset_id)
+    return DatasetSummary(
+        id=dataset.id, name=dataset.name, row_count=dataset.row_count, column_schema=dataset.column_schema
+    )
+
+
 @router.get("/{dataset_id}/schema", response_model=SchemaResponse)
 def get_schema(dataset_id: int, session: Session = Depends(get_db)) -> SchemaResponse:
     _get_dataset_or_404(session, dataset_id)

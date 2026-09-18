@@ -46,11 +46,19 @@ def upload(client: TestClient, content: bytes = CSV_CONTENT, name: str = "test")
     return response.json()
 
 
-def test_upload_and_schema(client: TestClient):
+def test_upload_and_get_dataset(client: TestClient):
     dataset = upload(client)
     assert dataset["name"] == "test"
     assert dataset["row_count"] == 3
     assert set(dataset["column_schema"].keys()) == {"id", "age"}
+
+    response = client.get(f"/datasets/{dataset['id']}")
+    assert response.status_code == 200
+    assert response.json() == dataset
+
+
+def test_upload_and_schema(client: TestClient):
+    dataset = upload(client)
 
     response = client.get(f"/datasets/{dataset['id']}/schema")
     assert response.status_code == 200
@@ -184,6 +192,7 @@ def test_suggest_checks_surfaces_agent_failure_as_502(client: TestClient, monkey
 @pytest.mark.parametrize(
     "method,path",
     [
+        ("get", "/datasets/999"),
         ("get", "/datasets/999/schema"),
         ("get", "/datasets/999/checks"),
         ("post", "/datasets/999/checks"),

@@ -10,6 +10,7 @@ See `CheckYourData_PLAN.md` for the full build plan.
 docker compose up -d postgres
 cp .env.example .env
 uv sync
+# or, without uv: pip install -r requirements.txt
 
 # tests (don't need Postgres running, use in-memory SQLite for DB-touching tests)
 uv run pytest
@@ -51,3 +52,20 @@ Known v1 limitations (by design, see `CheckYourData_PLAN.md`):
 - Uploads/CSVs are not chunked or streamed; capped at `storage.MAX_UPLOAD_MB` (20MB).
 - Uploaded CSVs are stored on local disk (`uploads/`), not in Postgres.
 - `params` values themselves aren't type/range-validated (e.g. Claude could still propose a nonsensical `min > max`); only required-key presence is checked.
+
+## Phase 4 — Frontend (React)
+
+```bash
+cd frontend
+npm install
+cp .env.example .env   # VITE_API_BASE_URL, defaults to http://localhost:8000
+npm run dev             # http://localhost:5173
+```
+
+Vite + React + TypeScript, Tailwind v4, a few Radix UI primitives (Dialog/Select/Checkbox) for accessible interactive components, `motion` for page transitions and micro-interactions, Recharts for the history trend view, `lucide-react` for icons. One page per route (`/`, `/datasets/:id`, `/datasets/:id/history`) under a persistent header showing the current dataset's name (via the `GET /datasets/{id}` endpoint added alongside this phase). No frontend test framework for v1 — verified by hand against the real API + Postgres.
+
+## Dependency files
+
+- `pyproject.toml` / `uv.lock` — source of truth, used by `uv run`/`uv sync`.
+- `requirements.txt` — generated from `uv.lock` (`uv export --format requirements-txt --no-dev --no-hashes -o requirements.txt`) for environments that expect plain pip; regenerate after any dependency change.
+- `frontend/package.json` / `package-lock.json` — frontend deps, used by `npm install`.
