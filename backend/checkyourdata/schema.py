@@ -102,6 +102,39 @@ class CheckSource(str, Enum):
     MANUAL = "manual"
 
 
+# Param keys each check implementation reads via params[key] (not params.get(key, default)).
+# Drift checks (mean/median/std_dev_within_pct, row_count_change_pct, distribution_shift) need
+# baseline_* params too, but those are injected at run time by baseline.inject_drift_baselines —
+# callers (including the AI agent) must never supply them directly, so they're excluded here.
+REQUIRED_PARAMS: dict[CheckType, set[str]] = {
+    CheckType.NOT_NULL: set(),
+    CheckType.NULL_PERCENTAGE_MAX: {"max_pct"},
+    CheckType.UNIQUE: set(),
+    CheckType.UNIQUENESS_PERCENTAGE_MIN: {"min_pct"},
+    CheckType.MIN_MAX_RANGE: set(),
+    CheckType.ALLOWED_VALUES: {"values"},
+    CheckType.REGEX_MATCH: {"pattern"},
+    CheckType.DATA_TYPE_CHECK: {"expected_type"},
+    CheckType.STRING_LENGTH_RANGE: set(),
+    CheckType.DATE_RANGE: set(),
+    CheckType.NO_DUPLICATES_ACROSS_COLUMNS: {"columns"},
+    CheckType.MEAN_WITHIN_PCT: set(),
+    CheckType.MEDIAN_WITHIN_PCT: set(),
+    CheckType.STD_DEV_WITHIN_PCT: set(),
+    CheckType.PERCENTILE_RANGE: {"percentile"},
+    CheckType.OUTLIER_RATE_MAX: set(),
+    CheckType.DISTRIBUTION_SHIFT: set(),
+    CheckType.ROW_COUNT_MIN: {"min_rows"},
+    CheckType.ROW_COUNT_MAX: {"max_rows"},
+    CheckType.ROW_COUNT_CHANGE_PCT: set(),
+    CheckType.COLUMN_COUNT_MATCH: {"expected_count"},
+    CheckType.COLUMN_ORDER_MATCH: {"expected_columns"},
+    CheckType.FRESHNESS_CHECK: {"max_age_hours"},
+    CheckType.REFERENTIAL_CHECK: {"reference_values"},
+    CheckType.CONDITIONAL_CHECK: {"if_column", "if_value", "then_column", "then_operator"},
+}
+
+
 class CheckConfig(BaseModel):
     column: str | None = None
     check_type: CheckType
@@ -116,6 +149,13 @@ class CheckConfig(BaseModel):
             raise ValueError(f"check_type '{self.check_type}' requires a 'column'")
         if not requires_column and self.column is not None:
             raise ValueError(f"check_type '{self.check_type}' is table-level and must not set 'column'")
+        return self
+
+    @model_validator(mode="after")
+    def _validate_required_params(self) -> "CheckConfig":
+        missing = REQUIRED_PARAMS.get(self.check_type, set()) - self.params.keys()
+        if missing:
+            raise ValueError(f"check_type '{self.check_type}' is missing required params: {sorted(missing)}")
         return self
 
     @property

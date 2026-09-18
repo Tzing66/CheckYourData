@@ -103,11 +103,11 @@ Goal: expose the engine as a proper service.
 ### Phase 3 — Schema-Analysis Agent
 Goal: Claude-powered endpoint that proposes checks.
 
-- [ ] Prompt design: input = column names, inferred pandas dtypes, a small sample of rows (~10–20, not the full dataset)
-- [ ] Ask Claude to infer semantic column types (email, categorical, ID, timestamp, etc.) and propose checks per column
-- [ ] Force structured JSON output matching the Phase 1 check-config schema exactly (system prompt instructs JSON-only, no prose)
-- [ ] Validate the agent's output against the schema before showing it to the user (reject/retry malformed output)
-- [ ] Wire this into `POST /datasets/{id}/suggest-checks`
+- [x] Prompt design: input = column names, inferred pandas dtypes, a small sample of rows (~10–20, not the full dataset)
+- [x] Ask Claude to infer semantic column types (email, categorical, ID, timestamp, etc.) and propose checks per column
+- [x] Force structured JSON output matching the Phase 1 check-config schema exactly (used forced tool-use instead of a JSON-only system prompt — more reliable)
+- [x] Validate the agent's output against the schema before showing it to the user (reject/retry malformed output) — also added required-param-key validation to `CheckConfig` itself after a real test run caught the agent using a wrong param key
+- [x] Wire this into `POST /datasets/{id}/suggest-checks`
 
 **Exit criteria:** uploading a new, unseen CSV returns a sensible list of suggested checks without manual config.
 

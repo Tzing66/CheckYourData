@@ -2,7 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from checkyourdata import service, storage
+from checkyourdata import cache, service, storage
+from checkyourdata.agent import AgentSuggestionError
+from checkyourdata.agent import suggest_checks as agent_suggest_checks
 from checkyourdata.api.schemas import (
     CheckOut,
     ColumnInfo,
@@ -53,15 +55,30 @@ def get_schema(dataset_id: int, session: Session = Depends(get_db)) -> SchemaRes
     _get_dataset_or_404(session, dataset_id)
     df = storage.load_dataframe(dataset_id)
 
-    columns = [ColumnInfo(name=c, dtype=str(t)) for c, t in df.dtypes.items()]
-    sample_rows = df.head(10).where(df.head(10).notna(), None).to_dict(orient="records")
-    return SchemaResponse(columns=columns, sample_rows=sample_rows)
+    columns = [ColumnInfo(name=c, dtype=t) for c, t in storage.column_dtypes(df).items()]
+    return SchemaResponse(columns=columns, sample_rows=storage.sample_records(df))
 
 
-@router.post("/{dataset_id}/suggest-checks")
-def suggest_checks(dataset_id: int, session: Session = Depends(get_db)) -> None:
+@router.post("/{dataset_id}/suggest-checks", response_model=list[CheckConfig])
+def suggest_checks(dataset_id: int, session: Session = Depends(get_db)) -> list[CheckConfig]:
     _get_dataset_or_404(session, dataset_id)
-    raise HTTPException(status_code=501, detail="AI check suggestion is implemented in Phase 3")
+    df = storage.load_dataframe(dataset_id)
+
+    column_schema = storage.column_dtypes(df)
+    sample_rows = storage.sample_records(df)
+    hash_key = cache.hash_payload(column_schema, sample_rows)
+
+    cached = cache.get_cached(session, hash_key)
+    if cached is not None:
+        return cached
+
+    try:
+        checks = agent_suggest_checks(column_schema, sample_rows)
+    except AgentSuggestionError as e:
+        raise HTTPException(status_code=502, detail=str(e)) from e
+
+    cache.store_cached(session, hash_key, checks)
+    return checks
 
 
 @router.post("/{dataset_id}/checks", response_model=list[CheckOut])

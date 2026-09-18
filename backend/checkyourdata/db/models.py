@@ -72,3 +72,12 @@ class BaselineStat(Base):
     computed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     dataset: Mapped["Dataset"] = relationship(back_populates="baseline_stats")
+
+
+class SchemaCache(Base):
+    __tablename__ = "schema_cache"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    hash: Mapped[str] = mapped_column(String, nullable=False, unique=True, index=True)
+    suggested_checks: Mapped[list] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

@@ -29,9 +29,25 @@ PYTHONPATH=backend uv run fastapi dev backend/checkyourdata/api/main.py
 open http://127.0.0.1:8000/docs
 ```
 
-Endpoints (all under `/datasets`): `POST /upload`, `GET /{id}/schema`, `POST /{id}/suggest-checks` (stub — 501 until Phase 3), `POST /{id}/checks`, `GET /{id}/checks`, `POST /{id}/run-checks`, `GET /{id}/history`.
+Endpoints (all under `/datasets`): `POST /upload`, `GET /{id}/schema`, `POST /{id}/suggest-checks`, `POST /{id}/checks`, `GET /{id}/checks`, `POST /{id}/run-checks`, `GET /{id}/history`.
+
+## Phase 3 — Schema-Analysis Agent
+
+`POST /datasets/{id}/suggest-checks` calls Claude (forced tool-use for structured output) with the dataset's column schema + a small sample, and returns a `list[CheckConfig]` your frontend flow would let a user review/edit before submitting to `POST /{id}/checks` — the agent never runs checks or saves anything itself.
+
+```bash
+# add your key to .env first:
+#   ANTHROPIC_API_KEY=sk-ant-...
+#   ANTHROPIC_MODEL=   # optional, defaults to claude-haiku-4-5-20251001
+```
+
+- Structured output is forced via a single `propose_checks` tool call (not "please respond in JSON"), with the exact param keys per `check_type` spelled out in the tool description (`agent.PARAM_HINTS`) so Claude doesn't have to guess key names.
+- `CheckConfig` now validates required param keys per `check_type` (`schema.REQUIRED_PARAMS`), so a malformed suggestion (wrong/missing param key) is caught and retried automatically (`agent.suggest_checks`, `max_attempts=2`) instead of surfacing at check-run time.
+- Results are cached in Postgres (`schema_cache` table, keyed by a sha256 hash of the schema+sample) so re-suggesting on the same data doesn't re-hit the API — verified: a second call for the same dataset returns identically and in ~40ms instead of ~4s.
+- The unit test suite (`tests/test_agent.py`) mocks the Claude call entirely — no real API calls or cost in `uv run pytest`.
 
 Known v1 limitations (by design, see `CheckYourData_PLAN.md`):
 - No Alembic — tables are created via `Base.metadata.create_all()`.
 - Uploads/CSVs are not chunked or streamed; capped at `storage.MAX_UPLOAD_MB` (20MB).
 - Uploaded CSVs are stored on local disk (`uploads/`), not in Postgres.
+- `params` values themselves aren't type/range-validated (e.g. Claude could still propose a nonsensical `min > max`); only required-key presence is checked.

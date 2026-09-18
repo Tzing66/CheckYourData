@@ -133,11 +133,52 @@ def test_history_returns_runs_in_order(client: TestClient):
     assert history[0]["results"][0]["check_type"] == "not_null"
 
 
-def test_suggest_checks_returns_not_implemented(client: TestClient):
+def test_suggest_checks_returns_agent_output(client: TestClient, monkeypatch):
     dataset = upload(client)
+    from checkyourdata.schema import CheckConfig, CheckSource, CheckType
+
+    stub_checks = [CheckConfig(column="id", check_type=CheckType.NOT_NULL, source=CheckSource.AI_SUGGESTED)]
+    monkeypatch.setattr("checkyourdata.api.routes.agent_suggest_checks", lambda *a, **kw: stub_checks)
+
     response = client.post(f"/datasets/{dataset['id']}/suggest-checks")
-    assert response.status_code == 501
-    assert "Phase 3" in response.json()["detail"]
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert len(body) == 1
+    assert body[0]["check_type"] == "not_null"
+    assert body[0]["source"] == "ai_suggested"
+
+
+def test_suggest_checks_uses_cache_on_second_call(client: TestClient, monkeypatch):
+    dataset = upload(client)
+    from checkyourdata.schema import CheckConfig, CheckSource, CheckType
+
+    stub_checks = [CheckConfig(column="id", check_type=CheckType.NOT_NULL, source=CheckSource.AI_SUGGESTED)]
+    call_count = {"n": 0}
+
+    def fake_agent(*args, **kwargs):
+        call_count["n"] += 1
+        return stub_checks
+
+    monkeypatch.setattr("checkyourdata.api.routes.agent_suggest_checks", fake_agent)
+
+    client.post(f"/datasets/{dataset['id']}/suggest-checks")
+    client.post(f"/datasets/{dataset['id']}/suggest-checks")
+
+    assert call_count["n"] == 1
+
+
+def test_suggest_checks_surfaces_agent_failure_as_502(client: TestClient, monkeypatch):
+    dataset = upload(client)
+    from checkyourdata.agent import AgentSuggestionError
+
+    def fake_agent(*args, **kwargs):
+        raise AgentSuggestionError("model never produced valid output")
+
+    monkeypatch.setattr("checkyourdata.api.routes.agent_suggest_checks", fake_agent)
+
+    response = client.post(f"/datasets/{dataset['id']}/suggest-checks")
+    assert response.status_code == 502
+    assert "model never produced valid output" in response.json()["detail"]
 
 
 @pytest.mark.parametrize(
