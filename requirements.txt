@@ -22,12 +22,20 @@ certifi==2026.7.22
     #   httpcore
     #   httpx
     #   sentry-sdk
+cffi==2.1.1 ; platform_python_implementation != 'PyPy'
+    # via cryptography
 click==8.5.0
     # via
     #   rich-toolkit
     #   uvicorn
 colorama==0.4.6 ; sys_platform == 'win32'
     # via typer
+cryptography==50.0.1
+    # via pyjwt
+deprecation==2.1.0
+    # via
+    #   postgrest
+    #   storage3
 detect-installer==0.2.1
     # via fastapi-cloud-cli
 dnspython==2.8.0
@@ -55,6 +63,10 @@ h11==0.16.0
     #   httpcore
     #   httpcore2
     #   uvicorn
+h2==4.4.1
+    # via httpx
+hpack==4.2.0
+    # via h2
 httpcore==1.0.9
     # via httpx
 httpcore2==2.13.0 ; sys_platform != 'emscripten'
@@ -65,16 +77,24 @@ httpx==0.28.1
     # via
     #   fastapi
     #   fastapi-cloud-cli
+    #   postgrest
+    #   storage3
+    #   supabase
+    #   supabase-auth
+    #   supabase-functions
 httpx2==2.13.0
     # via anthropic
 httpx2-jsfetch==1.0 ; sys_platform == 'emscripten'
     # via httpx2
+hyperframe==6.1.0
+    # via h2
 idna==3.20
     # via
     #   anyio
     #   email-validator
     #   httpx
     #   httpx2
+    #   yarl
 jinja2==3.1.6
     # via fastapi
 jiter==0.17.0
@@ -85,24 +105,38 @@ markupsafe==3.0.3
     # via jinja2
 mdurl==0.1.2
     # via markdown-it-py
+multidict==6.9.1
+    # via yarl
 numpy==2.5.3
     # via
     #   checkyourdata
     #   pandas
+packaging==26.3
+    # via deprecation
 pandas==3.0.5
     # via checkyourdata
+postgrest==2.31.0
+    # via supabase
+propcache==0.5.4
+    # via yarl
 psycopg==3.3.5
     # via checkyourdata
 psycopg-binary==3.3.5 ; implementation_name != 'pypy'
     # via psycopg
+pycparser==3.0 ; implementation_name != 'PyPy' and platform_python_implementation != 'PyPy'
+    # via cffi
 pydantic==2.13.5
     # via
     #   anthropic
     #   checkyourdata
     #   fastapi
     #   fastapi-cloud-cli
+    #   postgrest
     #   pydantic-extra-types
     #   pydantic-settings
+    #   realtime
+    #   storage3
+    #   supabase-auth
 pydantic-core==2.46.5
     # via pydantic
 pydantic-extra-types==2.11.1
@@ -111,6 +145,8 @@ pydantic-settings==2.15.0
     # via fastapi
 pygments==2.21.0
     # via rich
+pyjwt==2.14.0
+    # via supabase-auth
 python-dateutil==2.9.0.post0
     # via pandas
 python-dotenv==1.2.3
@@ -122,6 +158,8 @@ python-multipart==0.0.32
     # via fastapi
 pyyaml==6.0.3
     # via uvicorn
+realtime==2.31.0
+    # via supabase
 rich==15.0.0
     # via
     #   rich-toolkit
@@ -144,6 +182,16 @@ sqlalchemy==2.0.54
     # via checkyourdata
 starlette==1.6.0
     # via fastapi
+storage3==2.31.0
+    # via supabase
+strenum==0.4.15
+    # via supabase-functions
+supabase==2.31.0
+    # via checkyourdata
+supabase-auth==2.31.0
+    # via supabase
+supabase-functions==2.31.0
+    # via supabase
 truststore==0.10.4 ; sys_platform != 'emscripten'
     # via
     #   httpcore2
@@ -162,6 +210,7 @@ typing-extensions==4.16.0
     #   pydantic
     #   pydantic-core
     #   pydantic-extra-types
+    #   realtime
     #   rich-toolkit
     #   sqlalchemy
     #   starlette
@@ -186,5 +235,13 @@ uvloop==0.22.1 ; platform_python_implementation != 'PyPy' and sys_platform != 'c
     # via uvicorn
 watchfiles==1.2.0
     # via uvicorn
-websockets==17.1
-    # via uvicorn
+websockets==15.0.1
+    # via
+    #   realtime
+    #   uvicorn
+yarl==1.25.1
+    # via
+    #   postgrest
+    #   storage3
+    #   supabase
+    #   supabase-functions

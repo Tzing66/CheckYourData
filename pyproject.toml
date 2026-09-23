@@ -16,6 +16,7 @@ dependencies = [
     "python-dotenv>=1.0",
     "fastapi[standard]>=0.115",
     "anthropic>=0.40",
+    "supabase>=2.9",
 ]
 
 [dependency-groups]

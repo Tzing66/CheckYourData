@@ -13,7 +13,7 @@ CSV_CONTENT = b"id,age\n1,20\n2,30\n3,40\n"
 
 
 @pytest.fixture
-def client(tmp_path, monkeypatch):
+def client(monkeypatch):
     engine = create_engine(
         "sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool
     )
@@ -29,7 +29,21 @@ def client(tmp_path, monkeypatch):
 
     app.dependency_overrides[get_db] = override_get_db
     monkeypatch.setattr("checkyourdata.api.main.init_db", lambda: None)
-    monkeypatch.setattr(storage, "UPLOADS_DIR", tmp_path)
+
+    # In-memory fake for Supabase Storage — no real network calls in the test suite,
+    # same pattern as mocking the Claude call in tests/test_agent.py.
+    fake_storage: dict[int, bytes] = {}
+
+    def fake_save_upload(dataset_id: int, contents: bytes) -> None:
+        fake_storage[dataset_id] = contents
+
+    def fake_load_dataframe(dataset_id: int):
+        if dataset_id not in fake_storage:
+            raise FileNotFoundError(f"No stored data for dataset {dataset_id}")
+        return storage.parse_csv_bytes(fake_storage[dataset_id])
+
+    monkeypatch.setattr(storage, "save_upload", fake_save_upload)
+    monkeypatch.setattr(storage, "load_dataframe", fake_load_dataframe)
 
     with TestClient(app) as test_client:
         yield test_client

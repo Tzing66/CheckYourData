@@ -50,7 +50,6 @@ Endpoints (all under `/datasets`): `POST /upload`, `GET /{id}/schema`, `POST /{i
 Known v1 limitations (by design, see `CheckYourData_PLAN.md`):
 - No Alembic — tables are created via `Base.metadata.create_all()`.
 - Uploads/CSVs are not chunked or streamed; capped at `storage.MAX_UPLOAD_MB` (20MB).
-- Uploaded CSVs are stored on local disk (`uploads/`), not in Postgres.
 - `params` values themselves aren't type/range-validated (e.g. Claude could still propose a nonsensical `min > max`); only required-key presence is checked.
 
 ## Phase 4 — Frontend (React)
@@ -63,6 +62,28 @@ npm run dev             # http://localhost:5173
 ```
 
 Vite + React + TypeScript, Tailwind v4, a few Radix UI primitives (Dialog/Select/Checkbox) for accessible interactive components, `motion` for page transitions and micro-interactions, Recharts for the history trend view, `lucide-react` for icons. One page per route (`/`, `/datasets/:id`, `/datasets/:id/history`) under a persistent header showing the current dataset's name (via the `GET /datasets/{id}` endpoint added alongside this phase). No frontend test framework for v1 — verified by hand against the real API + Postgres.
+
+## Phase 5 — Docker + Deployment
+
+Single service: FastAPI serves the built frontend as static files (same origin, no CORS needed in production), and uploaded CSVs live in Supabase Storage instead of local disk — required because most free hosting tiers (Render included) don't persist local disk across a cold-start restart.
+
+**Local, whole stack via Docker:**
+```bash
+cp .env.example .env   # fill in DATABASE_URL is overridden for you; ANTHROPIC_*, SUPABASE_* still needed
+docker compose up --build   # postgres + the single app service, http://localhost:8000
+```
+
+**Supabase setup** (used for both Postgres and file storage):
+1. Create a project at supabase.com.
+2. Storage → New bucket → name it `datasets`, **private**.
+3. Project Settings → Database → connection string → `DATABASE_URL` in `.env` (use the `psycopg`-compatible `postgresql+psycopg://...` form).
+4. Project Settings → API → Project URL → `SUPABASE_URL`; `service_role` secret (not `anon`) → `SUPABASE_SERVICE_KEY`.
+
+**Deploy to Render:**
+1. New → Web Service → connect the `Tzing66/CheckYourData` GitHub repo.
+2. Runtime: Docker (uses the repo-root `Dockerfile` as-is).
+3. Environment variables: `DATABASE_URL`, `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` (optional), `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`. `CORS_ORIGINS` isn't needed in production (same-origin).
+4. Deploy — Render assigns a `https://*.onrender.com` URL; the free tier sleeps after inactivity and cold-starts on the next request (Postgres/Storage state persists in Supabase regardless, since neither lives on Render's disk).
 
 ## Dependency files
 

@@ -1,0 +1,17 @@
+.git/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.env
+.env.local
+uploads/
+tests/fixtures/data/
+
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+
+*.md
+.claude/

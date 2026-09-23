@@ -1,23 +1,41 @@
 import io
-from pathlib import Path
+import os
 
 import pandas as pd
+from supabase import Client, create_client
 
-UPLOADS_DIR = Path("uploads")
 MAX_UPLOAD_MB = 20
+BUCKET_NAME = "datasets"
+
+_client: Client | None = None
 
 
-def dataset_csv_path(dataset_id: int) -> Path:
-    return UPLOADS_DIR / f"{dataset_id}.csv"
+def _get_client() -> Client:
+    global _client
+    if _client is None:
+        _client = create_client(os.environ["SUPABASE_URL"], os.environ["SUPABASE_SERVICE_KEY"])
+    return _client
+
+
+def _object_path(dataset_id: int) -> str:
+    return f"{dataset_id}.csv"
 
 
 def save_upload(dataset_id: int, contents: bytes) -> None:
-    UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
-    dataset_csv_path(dataset_id).write_bytes(contents)
+    bucket = _get_client().storage.from_(BUCKET_NAME)
+    bucket.upload(
+        _object_path(dataset_id),
+        contents,
+        {"content-type": "text/csv", "upsert": "true"},
+    )
 
 
 def load_dataframe(dataset_id: int) -> pd.DataFrame:
-    return pd.read_csv(dataset_csv_path(dataset_id))
+    try:
+        contents = _get_client().storage.from_(BUCKET_NAME).download(_object_path(dataset_id))
+    except Exception as e:
+        raise FileNotFoundError(f"No stored data for dataset {dataset_id}: {e}") from e
+    return pd.read_csv(io.BytesIO(contents))
 
 
 def parse_csv_bytes(contents: bytes) -> pd.DataFrame:
