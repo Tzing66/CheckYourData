@@ -129,9 +129,9 @@ Goal: usable web UI end-to-end.
 ### Phase 5 — Docker + Deployment
 - [x] Dockerfile for backend, Dockerfile for frontend (or serve frontend build as static files from FastAPI to simplify deployment) — went with single-service: one multi-stage Dockerfile builds the frontend then serves it as static files from FastAPI (verified locally: routing precedence, asset serving, SPA fallback, HEAD requests all confirmed working)
 - [x] docker-compose for local dev (backend + frontend + Postgres) — `docker compose up --build` runs Postgres + the single app service
-- [ ] Deploy Postgres (Railway/Supabase managed free tier) — using Supabase; needs your account setup (see README Phase 5 section)
-- [ ] Deploy backend + frontend (Render or Railway) — using Render; needs your account setup
-- [ ] Confirm live link works end-to-end from a fresh browser session
+- [x] Deploy Postgres (Railway/Supabase managed free tier) — Supabase, using the session pooler connection string (the direct `db.*.supabase.co` host is IPv6-only and didn't resolve from Docker/most hosts)
+- [x] Deploy backend + frontend (Render or Railway) — Render, single web service from the repo-root Dockerfile
+- [ ] Confirm live link works end-to-end from a fresh browser session — deployed and reachable; still need the actual URL to verify independently
 
 ---
 
