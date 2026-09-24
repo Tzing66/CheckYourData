@@ -131,7 +131,7 @@ Goal: usable web UI end-to-end.
 - [x] docker-compose for local dev (backend + frontend + Postgres) — `docker compose up --build` runs Postgres + the single app service
 - [x] Deploy Postgres (Railway/Supabase managed free tier) — Supabase, using the session pooler connection string (the direct `db.*.supabase.co` host is IPv6-only and didn't resolve from Docker/most hosts)
 - [x] Deploy backend + frontend (Render or Railway) — Render, single web service from the repo-root Dockerfile
-- [ ] Confirm live link works end-to-end from a fresh browser session — deployed and reachable; still need the actual URL to verify independently
+- [x] Confirm live link works end-to-end from a fresh browser session — https://checkyourdata.onrender.com verified directly: upload, AI-suggested checks (Claude), save, run-checks (16/18 correctly passed/failed on real messy data), and history all confirmed working against the live service
 
 ---
 
