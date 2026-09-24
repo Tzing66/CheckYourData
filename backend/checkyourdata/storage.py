@@ -30,16 +30,25 @@ def save_upload(dataset_id: int, contents: bytes) -> None:
     )
 
 
+def _read_csv(contents: bytes) -> pd.DataFrame:
+    """Auto-detects the delimiter instead of assuming comma — plenty of real-world
+    ".csv" downloads (e.g. Kaggle exports) are actually tab- or semicolon-separated,
+    and a fixed comma separator silently parses those into one garbage column
+    instead of raising an error.
+    """
+    return pd.read_csv(io.BytesIO(contents), sep=None, engine="python")
+
+
 def load_dataframe(dataset_id: int) -> pd.DataFrame:
     try:
         contents = _get_client().storage.from_(BUCKET_NAME).download(_object_path(dataset_id))
     except Exception as e:
         raise FileNotFoundError(f"No stored data for dataset {dataset_id}: {e}") from e
-    return pd.read_csv(io.BytesIO(contents))
+    return _read_csv(contents)
 
 
 def parse_csv_bytes(contents: bytes) -> pd.DataFrame:
-    return pd.read_csv(io.BytesIO(contents))
+    return _read_csv(contents)
 
 
 def column_dtypes(df: pd.DataFrame) -> dict[str, str]:

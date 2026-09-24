@@ -1,8 +1,16 @@
 import { TrendingUp } from "lucide-react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { DRIFT_CHECK_TYPES, type CheckType } from "../api/types";
+import { useTheme } from "../hooks/useTheme";
 import { Badge } from "./ui/Badge";
 import { Card } from "./ui/Card";
+
+// Recharts renders raw SVG attributes, which Tailwind's dark: classes can't reach —
+// picked to match the stone/amber palette used everywhere else via CSS classes.
+const CHART_COLORS = {
+  light: { grid: "#e7e5e4", tick: "#78716c", line: "#d97706" },
+  dark: { grid: "#292524", tick: "#a8a29e", line: "#f59e0b" },
+};
 
 export interface HistoryPoint {
   runAt: string;
@@ -34,15 +42,17 @@ interface HistoryChartProps {
 }
 
 export function HistoryChart({ column, checkType, points }: HistoryChartProps) {
+  const { theme } = useTheme();
+  const colors = CHART_COLORS[theme];
   const isDrift = DRIFT_CHECK_TYPES.has(checkType);
   const failCount = points.filter((p) => !p.passed).length;
 
   return (
     <Card className="p-4">
       <div className="mb-2 flex items-center justify-between">
-        <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-800 dark:text-gray-200">
+        <h3 className="flex items-center gap-2 text-sm font-semibold text-stone-800 dark:text-stone-200">
           {column ?? "Table-level"} — <span className="font-mono text-xs">{checkType}</span>
-          {isDrift && <Badge tone="amber" icon={<TrendingUp className="h-3 w-3" />}>drift check</Badge>}
+          {isDrift && <Badge tone="yellow" icon={<TrendingUp className="h-3 w-3" />}>drift check</Badge>}
         </h3>
         {failCount > 0 && (
           <Badge tone="red">
@@ -53,21 +63,27 @@ export function HistoryChart({ column, checkType, points }: HistoryChartProps) {
       <div className="h-40">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={points} margin={{ top: 4, right: 8, bottom: 4, left: 8 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+            <CartesianGrid strokeDasharray="3 3" stroke={colors.grid} />
             <XAxis
               dataKey="runAt"
               tickFormatter={(v: string) => new Date(v).toLocaleDateString()}
-              tick={{ fontSize: 11 }}
+              tick={{ fontSize: 11, fill: colors.tick }}
             />
-            <YAxis tick={{ fontSize: 11 }} width={40} />
+            <YAxis tick={{ fontSize: 11, fill: colors.tick }} width={40} />
             <Tooltip
               formatter={(value, _name, item) => {
                 const payload = item?.payload as HistoryPoint | undefined;
                 return [String(value), payload?.passed ? "passed" : "failed"];
               }}
               labelFormatter={(label) => (typeof label === "string" ? new Date(label).toLocaleString() : String(label))}
+              contentStyle={{
+                backgroundColor: theme === "dark" ? "#1c1917" : "#ffffff",
+                borderColor: colors.grid,
+                borderRadius: 8,
+                fontSize: 12,
+              }}
             />
-            <Line type="monotone" dataKey="signal" stroke="#2563eb" strokeWidth={2} dot={<CheckDot />} />
+            <Line type="monotone" dataKey="signal" stroke={colors.line} strokeWidth={2} dot={<CheckDot />} />
           </LineChart>
         </ResponsiveContainer>
       </div>

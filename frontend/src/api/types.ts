@@ -80,6 +80,37 @@ export const TABLE_LEVEL_CHECK_TYPES: ReadonlySet<CheckType> = new Set([
   "conditional_check",
 ]);
 
+// Mirrors backend/checkyourdata/agent.py's PARAM_HINTS — shown in the manual check editor
+// so a param key isn't just a guessing game. Kept in sync manually, same as CHECK_TYPES.
+export const PARAM_HINTS: Record<CheckType, string> = {
+  not_null: "{}",
+  null_percentage_max: "{ max_pct: float (0-1) }",
+  unique: "{}",
+  uniqueness_percentage_min: "{ min_pct: float (0-1) }",
+  min_max_range: "{ min?: number, max?: number }",
+  allowed_values: "{ values: [...] }",
+  regex_match: "{ pattern: string }",
+  data_type_check: '{ expected_type: "int"|"float"|"numeric"|"datetime"|"bool"|"string" }',
+  string_length_range: "{ min_length?: int, max_length?: int }",
+  date_range: "{ min_date?: string, max_date?: string, not_future?: bool }",
+  no_duplicates_across_columns: "{ columns: [\"colA\", \"colB\", ...] }",
+  mean_within_pct: "{ pct?: float (0-1) } — baseline is computed automatically, don't supply it",
+  median_within_pct: "{ pct?: float (0-1) } — baseline is computed automatically, don't supply it",
+  std_dev_within_pct: "{ pct?: float (0-1) } — baseline is computed automatically, don't supply it",
+  percentile_range: "{ percentile: float (0-1), min?: number, max?: number }",
+  outlier_rate_max: "{ std_devs?: number, max_rate?: float (0-1) }",
+  distribution_shift: "{ max_psi?: float } — baseline is computed automatically, don't supply it",
+  row_count_min: "{ min_rows: int }",
+  row_count_max: "{ max_rows: int }",
+  row_count_change_pct: "{ pct?: float (0-1) } — baseline is computed automatically, don't supply it",
+  column_count_match: "{ expected_count: int }",
+  column_order_match: '{ expected_columns: ["colA", "colB", ...] }',
+  freshness_check: "{ max_age_hours: number } — column is the timestamp column",
+  referential_check: "{ reference_values: [...] } — column's values must all appear in this list",
+  conditional_check:
+    '{ if_column, if_value, then_column, then_operator: "equals"|"not_equals"|"gt"|"gte"|"lt"|"lte"|"not_null", then_value? } — table-level',
+};
+
 export type CheckSource = "ai_suggested" | "manual";
 
 export interface CheckConfig {
@@ -99,6 +130,7 @@ export interface DatasetSummary {
   name: string;
   row_count: number;
   column_schema: Record<string, string>;
+  uploaded_at: string;
 }
 
 export interface ColumnInfo {

@@ -1,6 +1,7 @@
-import { CheckCircle2, XCircle } from "lucide-react";
+import { CheckCircle2, ChevronDown, XCircle } from "lucide-react";
 import { motion } from "motion/react";
 import type { RunResponse } from "../api/types";
+import { describeResult, formatCheckTypeLabel } from "../lib/describeResult";
 
 export function RunResultsPanel({ run }: { run: RunResponse }) {
   const passedCount = run.results.filter((r) => r.passed).length;
@@ -26,33 +27,42 @@ export function RunResultsPanel({ run }: { run: RunResponse }) {
       <div className="space-y-5">
         {[...grouped.entries()].map(([column, results]) => (
           <div key={column}>
-            <h3 className="mb-1.5 text-sm font-semibold text-gray-800 dark:text-gray-200">{column}</h3>
+            <h3 className="mb-1.5 text-sm font-semibold text-stone-800 dark:text-stone-200">{column}</h3>
             <ul className="space-y-1.5">
               {results.map((result, i) => (
                 <motion.li
                   key={i}
                   initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.15, delay: i * 0.03 }}
-                  className={`flex items-start gap-2.5 rounded-lg border px-3 py-2.5 text-sm ${
+                  transition={{ duration: 0.15, delay: Math.min(i, 6) * 0.02 }}
+                  className={`rounded-lg border px-3 py-2.5 text-sm ${
                     result.passed
                       ? "border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950/50"
                       : "border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/50"
                   }`}
                 >
-                  {result.passed ? (
-                    <CheckCircle2 aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-green-600 dark:text-green-400" />
-                  ) : (
-                    <XCircle aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-red-600 dark:text-red-400" />
-                  )}
-                  <div>
-                    <p className="font-mono text-xs font-medium text-gray-800 dark:text-gray-200">
-                      {result.check_type} — {result.passed ? "passed" : "failed"}
-                    </p>
-                    <p className="mt-0.5 font-mono text-xs text-gray-500 dark:text-gray-400">
+                  <div className="flex items-start gap-2.5">
+                    {result.passed ? (
+                      <CheckCircle2 aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-green-600 dark:text-green-400" />
+                    ) : (
+                      <XCircle aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-red-600 dark:text-red-400" />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-medium tracking-wide text-stone-500 uppercase dark:text-stone-400">
+                        {formatCheckTypeLabel(result.check_type)}
+                      </p>
+                      <p className="mt-0.5 text-stone-800 dark:text-stone-200">{describeResult(result)}</p>
+                    </div>
+                  </div>
+                  <details className="group mt-1.5 ml-6.5">
+                    <summary className="flex w-fit cursor-pointer list-none items-center gap-1 text-xs text-stone-400 hover:text-stone-600 dark:text-stone-500 dark:hover:text-stone-300">
+                      <ChevronDown className="h-3 w-3 transition-transform duration-200 group-open:rotate-180" />
+                      Show details
+                    </summary>
+                    <p className="mt-1 font-mono text-xs text-stone-500 dark:text-stone-400">
                       {JSON.stringify(result.details)}
                     </p>
-                  </div>
+                  </details>
                 </motion.li>
               ))}
             </ul>

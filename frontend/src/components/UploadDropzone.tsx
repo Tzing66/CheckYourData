@@ -29,17 +29,17 @@ export function UploadDropzone({ onFileSelected, disabled }: UploadDropzoneProps
       className={`flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed
         p-14 text-center transition-all duration-200 ${
           isDragging
-            ? "scale-[1.01] border-blue-500 bg-blue-50 dark:bg-blue-950/40"
-            : "border-gray-300 bg-white hover:border-blue-400 hover:bg-blue-50/40 dark:border-gray-700 dark:bg-gray-900 dark:hover:border-blue-600 dark:hover:bg-blue-950/20"
+            ? "scale-[1.01] border-amber-500 bg-amber-50 dark:bg-amber-950/40"
+            : "border-stone-300 bg-white hover:border-amber-400 hover:bg-amber-50/40 dark:border-stone-700 dark:bg-stone-900 dark:hover:border-amber-600 dark:hover:bg-amber-950/20"
         } ${disabled ? "pointer-events-none opacity-50" : ""}`}
     >
-      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950">
-        <UploadCloud aria-hidden className="h-6 w-6 text-blue-600 dark:text-blue-400" strokeWidth={2} />
+      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-950">
+        <UploadCloud aria-hidden className="h-6 w-6 text-amber-600 dark:text-amber-400" strokeWidth={2} />
       </div>
-      <p className="mt-4 text-base font-medium text-gray-800 dark:text-gray-100">
+      <p className="mt-4 text-base font-medium text-stone-800 dark:text-stone-100">
         Drop a CSV file here, or click to choose one
       </p>
-      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">CSV files up to 20MB</p>
+      <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">CSV files up to 20MB</p>
       <input
         ref={inputRef}
         id="csv-upload-input"

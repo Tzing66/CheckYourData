@@ -12,6 +12,10 @@ export function uploadDataset(file: File): Promise<DatasetSummary> {
   return apiUploadFile<DatasetSummary>("/datasets/upload", file);
 }
 
+export function listDatasets(): Promise<DatasetSummary[]> {
+  return apiGet<DatasetSummary[]>("/datasets");
+}
+
 export function getDataset(datasetId: number): Promise<DatasetSummary> {
   return apiGet<DatasetSummary>(`/datasets/${datasetId}`);
 }

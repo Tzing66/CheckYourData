@@ -11,6 +11,19 @@
       rel="stylesheet"
     />
     <title>CheckYourData</title>
+    <script>
+      // Runs before paint to avoid a flash of the wrong theme: explicit choice
+      // (localStorage) wins, otherwise fall back to the OS preference.
+      (function () {
+        try {
+          var stored = localStorage.getItem("theme");
+          var dark = stored ? stored === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
+          document.documentElement.classList.toggle("dark", dark);
+        } catch (e) {
+          // localStorage/matchMedia unavailable (e.g. some private-browsing modes) — default to light.
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

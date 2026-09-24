@@ -1,5 +1,5 @@
 import pandas as pd
-from sqlalchemy import select, update
+from sqlalchemy import insert, select, update
 from sqlalchemy.orm import Session
 
 from checkyourdata.baseline import inject_drift_baselines, store_run_baseline
@@ -11,31 +11,51 @@ from checkyourdata.runner import CheckRunner
 from checkyourdata.schema import CheckConfig, CheckResult, CheckSource, CheckType
 
 
-def create_dataset(session: Session, name: str, df: pd.DataFrame) -> Dataset:
-    dataset = Dataset(name=name, column_schema={c: str(t) for c, t in df.dtypes.items()}, row_count=len(df))
+def create_dataset(session: Session, name: str, df: pd.DataFrame, owner_id: str | None = None) -> Dataset:
+    dataset = Dataset(
+        name=name,
+        column_schema={c: str(t) for c, t in df.dtypes.items()},
+        row_count=len(df),
+        owner_id=owner_id,
+    )
     session.add(dataset)
     session.commit()
     return dataset
 
 
+def list_datasets(session: Session, owner_id: str) -> list[Dataset]:
+    stmt = select(Dataset).where(Dataset.owner_id == owner_id).order_by(Dataset.uploaded_at.desc())
+    return list(session.execute(stmt).scalars().all())
+
+
 def save_checks(session: Session, dataset_id: int, checks: list[CheckConfig]) -> list[DBCheck]:
-    """Replace the dataset's active check set with the submitted list."""
+    """Replace the dataset's active check set with the submitted list.
+
+    Uses a single batched INSERT (session.execute(insert(...), rows)) rather than
+    session.add() per row in a loop — with a remote pooled Postgres connection, N
+    separate INSERT round-trips for N checks was measured at ~450ms/row (41s for 87
+    checks); batched, the same 87 rows lands in ~1-2s.
+    """
     session.execute(
         update(DBCheck).where(DBCheck.dataset_id == dataset_id, DBCheck.active.is_(True)).values(active=False)
     )
 
-    db_checks = []
-    for check in checks:
-        db_check = DBCheck(
-            dataset_id=dataset_id,
-            column=check.column,
-            check_type=check.check_type.value,
-            params=check.params,
-            source=check.source.value,
-            active=True,
-        )
-        session.add(db_check)
-        db_checks.append(db_check)
+    if not checks:
+        session.commit()
+        return []
+
+    rows = [
+        {
+            "dataset_id": dataset_id,
+            "column": check.column,
+            "check_type": check.check_type.value,
+            "params": check.params,
+            "source": check.source.value,
+            "active": True,
+        }
+        for check in checks
+    ]
+    db_checks = list(session.scalars(insert(DBCheck).returning(DBCheck), rows))
     session.commit()
     return db_checks
 
@@ -68,15 +88,18 @@ def run_checks(
     check_run = DBCheckRun(dataset_id=dataset_id)
     session.add(check_run)
     session.flush()
-    for result in results:
-        key = (result.check.column, result.check.check_type.value)
-        session.add(
-            DBCheckResult(
-                check_run_id=check_run.id,
-                check_id=check_ids[key],
-                passed=result.passed,
-                details=result.details,
-            )
+    if results:
+        session.execute(
+            insert(DBCheckResult),
+            [
+                {
+                    "check_run_id": check_run.id,
+                    "check_id": check_ids[(result.check.column, result.check.check_type.value)],
+                    "passed": result.passed,
+                    "details": result.details,
+                }
+                for result in results
+            ],
         )
     session.commit()
 

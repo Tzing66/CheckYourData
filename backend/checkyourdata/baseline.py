@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from sqlalchemy import select
+from sqlalchemy import insert, select
 from sqlalchemy.orm import Session
 
 from checkyourdata.db.models import BaselineStat
@@ -55,35 +55,41 @@ def population_stability_index(baseline: pd.Series, current: pd.Series, n_bucket
 
 
 def store_run_baseline(session: Session, dataset_id: int, df: pd.DataFrame, numeric_columns: list[str]) -> None:
-    """Persist this run's stats so future runs have something to compare against."""
+    """Persist this run's stats so future runs have something to compare against.
+
+    Batched into one INSERT (a wide dataset can have dozens of numeric columns,
+    i.e. dozens of session.add() round-trips — same fix as service.save_checks).
+    """
+    rows = []
     for column in numeric_columns:
         series = df[column].dropna()
-        session.add(
-            BaselineStat(
-                dataset_id=dataset_id,
-                column=column,
-                stat_type="numeric_summary",
-                value=compute_numeric_stats(df, column),
-            )
+        rows.append(
+            {
+                "dataset_id": dataset_id,
+                "column": column,
+                "stat_type": "numeric_summary",
+                "value": compute_numeric_stats(df, column),
+            }
         )
         sample = series if len(series) <= DRIFT_SAMPLE_SIZE else series.sample(DRIFT_SAMPLE_SIZE, random_state=0)
-        session.add(
-            BaselineStat(
-                dataset_id=dataset_id,
-                column=column,
-                stat_type="sample",
-                value={"values": sample.tolist()},
-            )
+        rows.append(
+            {
+                "dataset_id": dataset_id,
+                "column": column,
+                "stat_type": "sample",
+                "value": {"values": sample.tolist()},
+            }
         )
 
-    session.add(
-        BaselineStat(
-            dataset_id=dataset_id,
-            column=None,
-            stat_type="table_summary",
-            value=compute_table_stats(df),
-        )
+    rows.append(
+        {
+            "dataset_id": dataset_id,
+            "column": None,
+            "stat_type": "table_summary",
+            "value": compute_table_stats(df),
+        }
     )
+    session.execute(insert(BaselineStat), rows)
     session.commit()
 
 

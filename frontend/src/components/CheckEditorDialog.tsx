@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { CHECK_CATEGORIES, CHECK_TYPES, TABLE_LEVEL_CHECK_TYPES, type CheckConfig, type CheckType } from "../api/types";
+import { CHECK_CATEGORIES, CHECK_TYPES, PARAM_HINTS, TABLE_LEVEL_CHECK_TYPES, type CheckConfig, type CheckType } from "../api/types";
 import { Button } from "./ui/Button";
 import { Dialog } from "./ui/Dialog";
 import { Select } from "./ui/Select";
@@ -82,15 +82,15 @@ export function CheckEditorDialog({ open, onOpenChange, columns, initial, onSave
 
         {!isTableLevel && (
           <div>
-            <label htmlFor="check-column-select" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label htmlFor="check-column-select" className="mb-1 block text-sm font-medium text-stone-700 dark:text-stone-300">
               Column
             </label>
             <select
               id="check-column-select"
               value={column}
               onChange={(e) => setColumn(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 transition-colors
-                hover:border-gray-400 focus:border-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
+              className="w-full rounded-md border border-stone-300 px-3 py-2 text-sm text-stone-900 transition-colors duration-200
+                hover:border-stone-400 focus:border-amber-500 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 dark:hover:border-stone-600"
             >
               <option value="">— choose a column —</option>
               {columns.map((c) => (
@@ -103,9 +103,12 @@ export function CheckEditorDialog({ open, onOpenChange, columns, initial, onSave
         )}
 
         <div>
-          <label htmlFor="check-params-textarea" className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label htmlFor="check-params-textarea" className="mb-1 block text-sm font-medium text-stone-700 dark:text-stone-300">
             Params (JSON)
           </label>
+          <p className="mb-1.5 font-mono text-xs text-stone-400 dark:text-stone-500">
+            Expected shape: {PARAM_HINTS[checkType]}
+          </p>
           <textarea
             id="check-params-textarea"
             value={paramsText}
@@ -114,8 +117,8 @@ export function CheckEditorDialog({ open, onOpenChange, columns, initial, onSave
               setParamsError(null);
             }}
             rows={5}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 font-mono text-sm text-gray-900 transition-colors
-              hover:border-gray-400 focus:border-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
+            className="w-full rounded-md border border-stone-300 px-3 py-2 font-mono text-sm text-stone-900 transition-colors duration-200
+              hover:border-stone-400 focus:border-amber-500 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 dark:hover:border-stone-600"
           />
           {paramsError && (
             <p role="alert" className="mt-1 text-sm text-red-600">

@@ -51,10 +51,12 @@ def client(monkeypatch):
     app.dependency_overrides.clear()
 
 
-def upload(client: TestClient, content: bytes = CSV_CONTENT, name: str = "test") -> dict:
+def upload(client: TestClient, content: bytes = CSV_CONTENT, name: str = "test", client_id: str | None = None) -> dict:
+    headers = {"X-Client-Id": client_id} if client_id else {}
     response = client.post(
         f"/datasets/upload?name={name}",
         files={"file": ("test.csv", content, "text/csv")},
+        headers=headers,
     )
     assert response.status_code == 200, response.text
     return response.json()
@@ -69,6 +71,25 @@ def test_upload_and_get_dataset(client: TestClient):
     response = client.get(f"/datasets/{dataset['id']}")
     assert response.status_code == 200
     assert response.json() == dataset
+
+
+def test_list_datasets_scoped_by_client_id(client: TestClient):
+    upload(client, name="alice_1", client_id="alice")
+    upload(client, name="alice_2", client_id="alice")
+    upload(client, name="bob_1", client_id="bob")
+
+    response = client.get("/datasets", headers={"X-Client-Id": "alice"})
+    assert response.status_code == 200
+    names = {d["name"] for d in response.json()}
+    assert names == {"alice_1", "alice_2"}
+
+
+def test_list_datasets_without_client_id_returns_empty(client: TestClient):
+    upload(client, client_id="someone")
+
+    response = client.get("/datasets")
+    assert response.status_code == 200
+    assert response.json() == []
 
 
 def test_upload_and_schema(client: TestClient):

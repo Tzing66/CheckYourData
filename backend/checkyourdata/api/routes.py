@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, Header, HTTPException, UploadFile
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -31,7 +31,12 @@ def _get_dataset_or_404(session: Session, dataset_id: int) -> Dataset:
 
 
 @router.post("/upload", response_model=DatasetSummary)
-def upload_dataset(file: UploadFile, name: str | None = None, session: Session = Depends(get_db)) -> DatasetSummary:
+def upload_dataset(
+    file: UploadFile,
+    name: str | None = None,
+    x_client_id: str | None = Header(default=None, alias="X-Client-Id"),
+    session: Session = Depends(get_db),
+) -> DatasetSummary:
     contents = file.file.read()
     max_bytes = storage.MAX_UPLOAD_MB * 1024 * 1024
     if len(contents) > max_bytes:
@@ -42,20 +47,26 @@ def upload_dataset(file: UploadFile, name: str | None = None, session: Session =
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Could not parse CSV: {e}") from e
 
-    dataset = service.create_dataset(session, name or file.filename or "dataset", df)
+    dataset = service.create_dataset(session, name or file.filename or "dataset", df, owner_id=x_client_id)
     storage.save_upload(dataset.id, contents)
 
-    return DatasetSummary(
-        id=dataset.id, name=dataset.name, row_count=dataset.row_count, column_schema=dataset.column_schema
-    )
+    return _to_dataset_summary(dataset)
+
+
+@router.get("", response_model=list[DatasetSummary])
+def list_datasets(
+    x_client_id: str | None = Header(default=None, alias="X-Client-Id"),
+    session: Session = Depends(get_db),
+) -> list[DatasetSummary]:
+    if not x_client_id:
+        return []
+    return [_to_dataset_summary(d) for d in service.list_datasets(session, x_client_id)]
 
 
 @router.get("/{dataset_id}", response_model=DatasetSummary)
 def get_dataset(dataset_id: int, session: Session = Depends(get_db)) -> DatasetSummary:
     dataset = _get_dataset_or_404(session, dataset_id)
-    return DatasetSummary(
-        id=dataset.id, name=dataset.name, row_count=dataset.row_count, column_schema=dataset.column_schema
-    )
+    return _to_dataset_summary(dataset)
 
 
 @router.get("/{dataset_id}/schema", response_model=SchemaResponse)
@@ -143,6 +154,16 @@ def get_history(dataset_id: int, session: Session = Depends(get_db)) -> list[His
         ]
         entries.append(HistoryEntry(run_id=run.id, run_at=run.run_at, results=results))
     return entries
+
+
+def _to_dataset_summary(dataset: Dataset) -> DatasetSummary:
+    return DatasetSummary(
+        id=dataset.id,
+        name=dataset.name,
+        row_count=dataset.row_count,
+        column_schema=dataset.column_schema,
+        uploaded_at=dataset.uploaded_at,
+    )
 
 
 def _to_check_out(check: DBCheck) -> CheckOut:

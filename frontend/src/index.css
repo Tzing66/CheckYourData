@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Class-based dark mode (toggled by useTheme), not just the OS media query. */
+@custom-variant dark (&:is(.dark *));
+
 @theme {
   --font-sans: "Inter", system-ui, "Segoe UI", Roboto, sans-serif;
 }
@@ -11,20 +14,23 @@
 body {
   margin: 0;
   font-family: var(--font-sans);
-  background-color: var(--color-gray-50);
+  background-color: var(--color-stone-50);
+  transition: background-color 300ms ease;
 }
 
-@media (prefers-color-scheme: dark) {
-  body {
-    background-color: var(--color-gray-950);
-  }
+.dark body {
+  background-color: var(--color-stone-950);
 }
 
 /* Visible focus ring on every focusable element, regardless of input modality. */
 :focus-visible {
-  outline: 2px solid var(--color-blue-600);
+  outline: 2px solid var(--color-amber-600);
   outline-offset: 2px;
   border-radius: 4px;
+}
+
+.dark :focus-visible {
+  outline-color: var(--color-amber-500);
 }
 
 @keyframes overlay-fade-in {
@@ -36,14 +42,14 @@ body {
 @keyframes content-in {
   from {
     opacity: 0;
-    transform: translate(-50%, -48%) scale(0.97);
+    transform: translate(-50%, -48%) scale(0.96);
   }
 }
 
 .dialog-overlay[data-state="open"] {
-  animation: overlay-fade-in 150ms ease-out;
+  animation: overlay-fade-in 200ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .dialog-content[data-state="open"] {
-  animation: content-in 150ms ease-out;
+  animation: content-in 220ms cubic-bezier(0.22, 1, 0.36, 1);
 }

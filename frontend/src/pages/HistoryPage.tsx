@@ -1,4 +1,5 @@
 import { AlertCircle, ArrowLeft, LineChart } from "lucide-react";
+import { motion } from "motion/react";
 import { useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getHistory } from "../api/datasets";
@@ -46,16 +47,21 @@ export function HistoryPage() {
 
   return (
     <PageLayout>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">History</h1>
+      <div className="mb-2 flex items-start justify-between">
+        <h1 className="text-xl font-semibold text-stone-900 dark:text-stone-100">History</h1>
         <Link
           to={`/datasets/${datasetId}`}
-          className="flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:underline dark:text-blue-400"
+          className="flex shrink-0 items-center gap-1.5 text-sm font-medium text-amber-600 hover:underline dark:text-amber-400"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to dataset
         </Link>
       </div>
+      <p className="mb-6 max-w-2xl text-sm text-stone-500 dark:text-stone-400">
+        Each point is a run. Red points failed. Checks tagged <span className="font-medium">drift check</span> compare
+        the current data against past runs, not just the file on its own — that's how gradual shifts (a shrinking
+        row count, a creeping mean) get caught even when nothing looks wrong in isolation.
+      </p>
 
       {historyState.loading && (
         <div className="space-y-4">
@@ -77,8 +83,15 @@ export function HistoryPage() {
       )}
 
       <div className="space-y-4">
-        {series.map((s) => (
-          <HistoryChart key={s.checkId} column={s.column} checkType={s.checkType} points={s.points} />
+        {series.map((s, i) => (
+          <motion.div
+            key={s.checkId}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, delay: i * 0.03, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <HistoryChart column={s.column} checkType={s.checkType} points={s.points} />
+          </motion.div>
         ))}
       </div>
     </PageLayout>

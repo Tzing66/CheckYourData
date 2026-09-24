@@ -11,6 +11,7 @@ class DatasetSummary(BaseModel):
     name: str
     row_count: int
     column_schema: dict[str, str]
+    uploaded_at: datetime
 
 
 class ColumnInfo(BaseModel):

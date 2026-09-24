@@ -16,6 +16,10 @@ class Dataset(Base):
     uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     column_schema: Mapped[dict] = mapped_column(JSON, nullable=False)
     row_count: Mapped[int] = mapped_column(nullable=False)
+    # Anonymous per-browser id today (X-Client-Id header); a real user id later can
+    # reuse this same column unchanged once auth exists. Nullable: rows from before
+    # this column existed just won't show up in anyone's list.
+    owner_id: Mapped[str | None] = mapped_column(String, nullable=True)
 
     checks: Mapped[list["Check"]] = relationship(back_populates="dataset")
     check_runs: Mapped[list["CheckRun"]] = relationship(back_populates="dataset")
